@@ -17,15 +17,13 @@ app.use(express.json());
 const port = 3000;
 
 app.get("/saying/random", async (req, res) => {
-  const { id } = req.params;
   const [[sayingRow]] = await pool.query(
     `
     SELECT *
     FROM saying
     ORDER BY RAND()
     LIMIT 1
-    `,
-    [id]
+    `
   );
 
   if (sayingRow === undefined) {
@@ -35,6 +33,17 @@ app.get("/saying/random", async (req, res) => {
     });
     return;
   }
+
+  sayingRow.view_count++;
+
+  await pool.query(
+    `
+    UPDATE saying
+    SET view_count = ?
+    WHERE id = ?
+    `,
+    [sayingRow.view_count, sayingRow.id]
+  );
 
   res.json({
     resultCode: "S-1",
